@@ -1,0 +1,42 @@
+# install-spss30.yml
+- name: Install SPSS 30 and copy license file
+  hosts: all
+  gather_facts: no
+
+  vars:
+    # SPSS setup exe (client PC'deki yol)
+    source_setup: 'C:\Users\ferhat.gecili\Desktop\Share\SPSS-30\SPSS_STATISTICSC_30.0.0_WINDOWS.exe'
+
+    # Lisans dosyası (client PC'deki yol)
+    source_license: 'C:\Users\ferhat.gecili\Desktop\Share\SPSS-30\commutelicense.ini'
+
+    # SPSS ana klasörü
+    spss_install_root: 'C:\Program Files\IBM\SPSS Statistics'
+
+  tasks:
+    # 1) SPSS 30 kurulumu (silent)
+    - name: Run SPSS 30 silent installer (PowerShell-safe)
+      ansible.windows.win_shell: |
+        & "{{ source_setup }}" /S /v`"/qn`"
+
+    # 2) Kurulumun bitmesi için biraz bekle
+    - name: Wait 90 seconds for SPSS setup to finish
+      ansible.builtin.pause:
+        seconds: 90
+
+    # 3) commutelicense.ini’yi bizim kaynaktan SPSS klasörüne kopyala
+    - name: Copy commutelicense.ini to SPSS install directory
+      ansible.windows.win_copy:
+        src: "{{ source_license }}"
+        dest: "{{ spss_install_root }}\\commutelicense.ini"
+        remote_src: true
+
+    # 4) Dosya gerçekten var mı, kontrol et
+    - name: Verify license file exists
+      ansible.windows.win_stat:
+        path: "{{ spss_install_root }}\\commutelicense.ini"
+      register: lic_file
+
+    - name: Debug license file result
+      ansible.builtin.debug:
+        var: lic_file
