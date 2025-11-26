@@ -1,0 +1,17 @@
+---
+- name: Get installed applications on Windows
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Get installed applications (Uninstall registry)
+      ansible.windows.win_shell: |
+        Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
+        Select-Object DisplayName, DisplayVersion, Publisher, InstallDate |
+        Where-Object { $_.DisplayName -ne $null } |
+        ConvertTo-Json -Depth 3
+      register: app_list
+
+    - name: Print application list
+      debug:
+        var: app_list.stdout
